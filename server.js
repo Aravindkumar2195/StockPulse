@@ -3,7 +3,19 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const YF = require('yahoo-finance2').default;
-const yahooFinance = new YF({ suppressNotices: ['yahooSurvey'] });
+const yahooFinance = new YF({
+  suppressNotices: ['yahooSurvey'],
+  queue: {
+    concurrency: 4, // Max 4 concurrent requests to avoid 429
+    timeout: 60000
+  },
+  logger: {
+    info: (...args) => {},
+    warn: (...args) => {},
+    error: (...args) => {},
+    debug: (...args) => {}
+  }
+});
 
 const app = express();
 const PORT = process.env.PORT || 3001;
