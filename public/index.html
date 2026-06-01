@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>StockPulse - Portfolio Tracker</title>
+  <meta name="description" content="StockPulse is a premium mobile portfolio tracker with real-time VWMA and RSI Divergence analysis tools for smarter investing decisions.">
+
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#0a0e27">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Google Material Symbols Rounded -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Status Bar Spacer -->
+  <div class="status-bar-spacer"></div>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-icon">
+        <span class="material-symbols-rounded">monitoring</span>
+      </div>
+      <h1 class="app-title">StockPulse</h1>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="addStockBtn" aria-label="Add Stock">
+        <span class="material-symbols-rounded">add_circle</span>
+      </button>
+      <button class="icon-btn" id="refreshBtn" aria-label="Refresh Data">
+        <span class="material-symbols-rounded">refresh</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== Screen 1: Dashboard ==================== -->
+  <main id="dashboardScreen" class="screen active">
+
+    <!-- Portfolio Summary -->
+    <section class="portfolio-summary">
+      <div class="summary-card total-value-card">
+        <span class="card-label">Total Portfolio Value</span>
+        <div class="card-value" id="totalValue">₹0.00</div>
+        <div class="card-change positive" id="totalChange">+₹0.00 (0.00%)</div>
+      </div>
+      <div class="summary-row">
+        <div class="summary-card mini-card">
+          <span class="card-label">Today's P&amp;L</span>
+          <div class="card-value" id="todayPL">₹0.00</div>
+        </div>
+        <div class="summary-card mini-card">
+          <span class="card-label">Active Alerts</span>
+          <div class="card-value" id="activeAlerts">0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Watchlist -->
+    <section class="watchlist-section">
+      <div class="section-header">
+        <h2>Watchlist</h2>
+        <button id="managePortfolioBtn" class="text-btn">Manage</button>
+      </div>
+      <div id="watchlistContainer"></div>
+    </section>
+
+    <!-- Recent Alerts -->
+    <section class="alerts-section">
+      <div class="section-header">
+        <h2>Recent Alerts</h2>
+        <button class="text-btn">View All</button>
+      </div>
+      <div id="alertsPreview"></div>
+    </section>
+
+  </main>
+
+  <!-- ==================== Screen 2: VWMA Tool ==================== -->
+  <main id="vwmaScreen" class="screen">
+
+    <div class="tool-header">
+      <h2>VWMA Analysis</h2>
+      <p class="tool-desc">50-Day Volume Weighted Moving Average</p>
+    </div>
+
+    <!-- Stock Selector -->
+    <div class="stock-selector">
+      <select id="vwmaStockSelect" class="stock-select">
+        <option value="" disabled selected>Select a stock...</option>
+      </select>
+    </div>
+
+    <!-- Chart Section (hidden initially) -->
+    <div id="vwmaChartSection" class="chart-section" style="display:none;">
+
+      <!-- Chart Card -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-info">
+            <span class="chart-symbol" id="vwmaSymbol">—</span>
+            <span class="chart-price" id="vwmaPrice">—</span>
+            <span class="chart-change" id="vwmaChange">—</span>
+          </div>
+          <div class="signal-badge hold" id="vwmaSignalBadge">HOLD</div>
+        </div>
+        <div id="vwmaChart" class="chart-container"></div>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <span class="legend-color" style="background:#00d4ff;"></span> Price
+          </div>
+          <div class="legend-item">
+            <span class="legend-color" style="background:#f7931a;"></span> VWMA
+          </div>
+        </div>
+      </div>
+
+      <!-- Signal Details -->
+      <div class="signal-details-card" id="vwmaSignalDetails">
+        <h3>Signal Details</h3>
+        <div class="signal-info-grid" id="vwmaSignalGrid"></div>
+      </div>
+
+      <!-- Signal History -->
+      <div class="history-card">
+        <h3>Signal History</h3>
+        <div class="signal-history-list" id="vwmaSignalHistory"></div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ==================== Screen 3: RSI Divergence ==================== -->
+  <main id="rsiScreen" class="screen">
+
+    <div class="tool-header">
+      <h2>RSI Divergence Scanner</h2>
+      <p class="tool-desc">Multi-Timeframe Bullish &amp; Bearish Divergence Alerts</p>
+    </div>
+
+    <!-- RSI Scanner Controls -->
+    <div class="rsi-controls" style="display: flex; gap: 12px; margin-bottom: 20px;">
+      <div style="flex: 1;">
+        <label for="rsiScanUniverse" style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">Scan Universe</label>
+        <select id="rsiScanUniverse" class="form-select">
+          <option value="portfolio" selected>My Portfolio</option>
+          <option value="nifty50">NIFTY 50 Index</option>
+          <option value="nifty100">NIFTY 100 Index</option>
+          <option value="nifty200">NIFTY 200 Index</option>
+          <option value="nifty500">NIFTY 500 Index</option>
+          <option value="bse_sensex">BSE SENSEX</option>
+          <option value="nasdaq100">NASDAQ 100</option>
+          <option value="sp500">S&P 500</option>
+        </select>
+      </div>
+      <div style="flex: 1;">
+        <label for="rsiTimeframe" style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">Timeframe</label>
+        <select id="rsiTimeframe" class="setting-select">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly" selected>Monthly</option>
+        </select>
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <button id="runRsiScanBtn" class="primary-btn" style="width: 100%;">Run Scanner</button>
+    </div>
+    
+    <div id="rsiLoadingIndicator" style="display: none; text-align: center; padding: 20px;">
+      <span class="material-symbols-rounded" style="animation: spin 1s linear infinite; font-size: 32px; color: var(--accent-cyan);">autorenew</span>
+      <p style="margin-top: 10px; color: var(--text-secondary);">Scanning Market Data...</p>
+    </div>
+
+    <!-- RSI Summary Cards -->
+    <div class="rsi-summary-cards">
+      <div class="rsi-stat-card bullish">
+        <span class="material-symbols-rounded">trending_up</span>
+        <div class="stat-value" id="bullishCount">0</div>
+        <div class="stat-label">Bullish</div>
+      </div>
+      <div class="rsi-stat-card bearish">
+        <span class="material-symbols-rounded">trending_down</span>
+        <div class="stat-value" id="bearishCount">0</div>
+        <div class="stat-label">Bearish</div>
+      </div>
+      <div class="rsi-stat-card neutral">
+        <span class="material-symbols-rounded">remove</span>
+        <div class="stat-value" id="neutralCount">0</div>
+        <div class="stat-label">No Signal</div>
+      </div>
+    </div>
+
+    <!-- RSI Alerts List -->
+    <div id="rsiAlertsList"></div>
+
+  </main>
+
+  <!-- ==================== Screen 4: Settings ==================== -->
+  <main id="settingsScreen" class="screen">
+
+    <div class="tool-header">
+      <h2>Settings</h2>
+      <p class="tool-desc">Configure your analysis preferences</p>
+    </div>
+
+    <!-- VWMA Settings -->
+    <div class="settings-group">
+      <h3>VWMA Settings</h3>
+      <div class="setting-item">
+        <label for="vwmaPeriodSetting">VWMA Period</label>
+        <select id="vwmaPeriodSetting" class="setting-select">
+          <option value="20">20 Days</option>
+          <option value="50" selected>50 Days</option>
+          <option value="100">100 Days</option>
+          <option value="200">200 Days</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- RSI Settings -->
+    <div class="settings-group">
+      <h3>RSI Settings</h3>
+      <div class="setting-item">
+        <label for="rsiPeriodSetting">RSI Period</label>
+        <select id="rsiPeriodSetting" class="setting-select">
+          <option value="7">7 Days</option>
+          <option value="14" selected>14 Days</option>
+          <option value="21">21 Days</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Portfolio Settings -->
+    <div class="settings-group">
+      <h3>Portfolio</h3>
+      <div class="setting-item">
+        <label for="currencySetting">Currency</label>
+        <select id="currencySetting" class="setting-select">
+          <option value="INR" selected>INR (₹)</option>
+          <option value="USD">USD ($)</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <label>Data Management</label>
+        <button class="danger-btn" id="clearDataBtn">Clear All Data</button>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div class="settings-group">
+      <h3>About</h3>
+      <div class="setting-item about-info">
+        <div>
+          <div class="about-app-name">StockPulse</div>
+          <div class="about-version">Version 1.0</div>
+          <div class="about-desc">Professional portfolio tracker with VWMA and RSI Divergence analysis tools.</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ==================== Add Stock Modal ==================== -->
+  <div id="addStockModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add Stock</h2>
+        <button class="icon-btn" id="closeModal" aria-label="Close Modal">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <form id="addStockForm" autocomplete="off">
+        <div class="form-group">
+          <label for="stockSymbolInput">Stock Symbol</label>
+          <input type="text" id="stockSymbolInput" class="form-input" placeholder="e.g., RELIANCE, TCS" required>
+        </div>
+        <div class="form-group">
+          <label for="stockNameInput">Company Name</label>
+          <input type="text" id="stockNameInput" class="form-input" placeholder="e.g., Reliance Industries" required>
+        </div>
+        <div class="form-group">
+          <label for="stockSharesInput">Number of Shares</label>
+          <input type="number" id="stockSharesInput" class="form-input" placeholder="e.g., 10" min="1" required>
+        </div>
+        <div class="form-group">
+          <label for="stockAvgPriceInput">Average Buy Price</label>
+          <input type="number" id="stockAvgPriceInput" class="form-input" placeholder="e.g., 2450.50" step="0.01" min="0.01" required>
+        </div>
+        <button type="submit" id="addStockSubmit" class="primary-btn">
+          <span class="material-symbols-rounded">add_circle</span>
+          Add to Portfolio
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== Manage Portfolio Modal ==================== -->
+  <div id="managePortfolioModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Manage Portfolio</h2>
+        <button class="icon-btn" id="closeManageModal" aria-label="Close Modal">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <div id="managePortfolioList" style="max-height: 400px; overflow-y: auto;">
+        <!-- List will be populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Bottom Navigation ==================== -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-screen="dashboardScreen">
+      <span class="material-symbols-rounded">dashboard</span>
+      <span class="nav-label">Dashboard</span>
+    </button>
+    <button class="nav-item" data-screen="vwmaScreen">
+      <span class="material-symbols-rounded">show_chart</span>
+      <span class="nav-label">VWMA</span>
+    </button>
+    <button class="nav-item" data-screen="rsiScreen">
+      <span class="material-symbols-rounded">ssid_chart</span>
+      <span class="nav-label">RSI</span>
+    </button>
+    <button class="nav-item" data-screen="settingsScreen">
+      <span class="material-symbols-rounded">settings</span>
+      <span class="nav-label">Settings</span>
+    </button>
+  </nav>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="js/stockData.js"></script>
+  <script src="js/indicators.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

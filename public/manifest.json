@@ -1,0 +1,10 @@
+{
+  "name": "StockPulse - Portfolio Tracker",
+  "short_name": "StockPulse",
+  "description": "Professional portfolio tracker with VWMA and RSI Divergence analysis",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#060a1a",
+  "theme_color": "#0a0e27",
+  "orientation": "portrait"
+}

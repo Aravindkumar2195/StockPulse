@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head><title>StockPulse Validation Test</title></head>
+<body>
+<pre id="output"></pre>
+<script src="js/stockData.js"></script>
+<script src="js/indicators.js"></script>
+<script>
+var log = [];
+function assert(condition, msg) {
+  log.push((condition ? '✅ PASS' : '❌ FAIL') + ': ' + msg);
+}
+
+try {
+  // === StockData Tests ===
+  assert(typeof window.StockData === 'object', 'StockData module loaded');
+  assert(StockData.defaultStocks.length === 6, 'Default stocks has 6 entries');
+  
+  var portfolio = StockData.getPortfolio();
+  assert(Array.isArray(portfolio) && portfolio.length >= 6, 'getPortfolio returns array with stocks');
+  
+  var goog = StockData.getStockData('GOOG');
+  assert(goog && goog.daily && goog.daily.length === 250, 'GOOG daily data has 250 candles');
+  assert(goog.monthly && goog.monthly.length > 0, 'GOOG monthly data generated');
+  
+  // Validate candle structure
+  var candle = goog.daily[0];
+  assert(candle.time && candle.open && candle.high && candle.low && candle.close && candle.volume, 'Candle has all OHLCV fields');
+  assert(candle.high >= candle.low, 'High >= Low');
+  assert(candle.high >= candle.open && candle.high >= candle.close, 'High >= Open and Close');
+  
+  // Last candle should be close to current price
+  var lastCandle = goog.daily[goog.daily.length - 1];
+  assert(Math.abs(lastCandle.close - 376.43) < 1, 'Last GOOG close ≈ 376.43 (got ' + lastCandle.close + ')');
+
+  // Monthly aggregation
+  var firstMonthly = goog.monthly[0];
+  assert(firstMonthly.time.endsWith('-01'), 'Monthly time format is YYYY-MM-01');
+  
+  // Total value
+  var totalVal = StockData.getTotalValue();
+  assert(totalVal > 0, 'Total portfolio value > 0 (GOOG has 5 shares): ' + totalVal);
+  
+  // === Indicators Tests ===
+  assert(typeof window.Indicators === 'object', 'Indicators module loaded');
+  
+  // VWMA
+  var vwma = Indicators.calculateVWMA(goog.daily, 50);
+  assert(vwma.length > 0, 'VWMA calculated: ' + vwma.length + ' data points');
+  assert(vwma.length === 250 - 50 + 1, 'VWMA length = daily - period + 1 = ' + (250 - 50 + 1));
+  assert(vwma[0].time && typeof vwma[0].value === 'number', 'VWMA entry has time and value');
+  
+  // VWMA Signals
+  var signals = Indicators.detectVWMASignals(goog.daily, vwma);
+  assert(Array.isArray(signals), 'VWMA signals is an array');
+  if (signals.length > 0) {
+    assert(signals[0].type === 'BUY' || signals[0].type === 'SELL', 'Signal type is BUY or SELL');
+    assert(typeof signals[0].price === 'number', 'Signal has price');
+  }
+  log.push('  ℹ️ Found ' + signals.length + ' VWMA crossover signals for GOOG');
+  
+  // Current VWMA signal
+  var currentSig = Indicators.getCurrentVWMASignal(goog.daily, vwma);
+  assert(currentSig.signal === 'BUY' || currentSig.signal === 'SELL' || currentSig.signal === 'NEUTRAL', 
+    'Current signal is valid: ' + currentSig.signal);
+  assert(typeof currentSig.distance === 'number', 'Distance is a number: ' + (currentSig.distance * 100).toFixed(2) + '%');
+  
+  // RSI
+  var rsi = Indicators.calculateRSI(goog.monthly, 14);
+  log.push('  ℹ️ Monthly candles: ' + goog.monthly.length + ', RSI values: ' + rsi.length);
+  if (rsi.length > 0) {
+    assert(rsi[rsi.length - 1].value >= 0 && rsi[rsi.length - 1].value <= 100, 
+      'RSI in valid range 0-100: ' + rsi[rsi.length - 1].value);
+  } else {
+    log.push('  ⚠️ Not enough monthly data for RSI (need > 15 months for 14-period RSI)');
+  }
+  
+  // RSI Divergence scan
+  var divResults = Indicators.scanAllRSIDivergences(portfolio, function(sym) {
+    return StockData.getStockData(sym);
+  });
+  assert(Array.isArray(divResults), 'RSI scan returns array');
+  assert(divResults.length === portfolio.length, 'RSI scan covers all ' + portfolio.length + ' stocks');
+  
+  var bullish = 0, bearish = 0, none = 0;
+  divResults.forEach(function(r) {
+    if (r.divergence.type === 'BULLISH') bullish++;
+    else if (r.divergence.type === 'BEARISH') bearish++;
+    else none++;
+  });
+  log.push('  ℹ️ RSI Divergence Results: ' + bullish + ' bullish, ' + bearish + ' bearish, ' + none + ' none');
+  
+  // Formatting helpers
+  assert(Indicators.formatCurrency(1234.56, 'INR') === '₹1,234.56', 'formatCurrency INR works: ' + Indicators.formatCurrency(1234.56, 'INR'));
+  assert(Indicators.formatPercent(0.0604) === '+6.04%', 'formatPercent works: ' + Indicators.formatPercent(0.0604));
+  assert(Indicators.formatPercent(-0.0251) === '-2.51%', 'formatPercent negative: ' + Indicators.formatPercent(-0.0251));
+  
+  // Test all stocks generate data
+  portfolio.forEach(function(stock) {
+    var d = StockData.getStockData(stock.symbol);
+    assert(d.daily.length === 250, stock.symbol + ' has 250 daily candles');
+  });
+
+  log.push('');
+  log.push('=== ALL TESTS COMPLETE ===');
+
+} catch (e) {
+  log.push('❌ ERROR: ' + e.message + '\n' + e.stack);
+}
+
+document.getElementById('output').textContent = log.join('\n');
+</script>
+</body>
+</html>
