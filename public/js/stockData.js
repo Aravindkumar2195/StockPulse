@@ -8,7 +8,7 @@
 (function () {
   'use strict';
 
-  var API_BASE = 'http://10.0.2.2:3001/api';
+  var API_BASE = 'https://sswl-cloop-67c0ecig8-aravind-s-projects8.vercel.app/api';
 
   var defaultStocks = [
     { symbol: 'GOOG', name: 'Alphabet Inc Class C', exchange: 'NASDAQ', shares: 5, avgPrice: 150.00 },
