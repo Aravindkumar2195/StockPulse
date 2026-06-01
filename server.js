@@ -162,7 +162,11 @@ app.get('/api/historical', async (req, res) => {
   }
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`StockPulse API backend running on http://localhost:${PORT}`);
-});
+// Start server locally (ignored by Vercel serverless)
+if (process.env.NODE_ENV !== 'production' || process.env.RENDER) {
+  app.listen(PORT, () => {
+    console.log(`StockPulse API backend running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
